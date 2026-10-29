@@ -35,6 +35,14 @@ jobs:
       - name: Larastan (level max)
         run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
 
+      - name: OpenAPI document is up to date (docs are generated from code)
+        env:
+          APP_URL: http://localhost:8080
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        run: |
+          php artisan scramble:export --path=/tmp/openapi.json
+          diff -u docs/api/openapi.json /tmp/openapi.json || (echo "::error::Run 'make docs' and commit docs/api/openapi.json" && exit 1)
+
   tests:
     name: Tests (MySQL 8.4)
     runs-on: ubuntu-latest

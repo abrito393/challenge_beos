@@ -5,7 +5,7 @@ EXEC := $(DC) exec -T app
 export UID := $(shell id -u)
 export GID := $(shell id -g)
 
-.PHONY: help setup up down restart build install env migrate fresh seed test lint fix stan check docs shell logs
+.PHONY: help setup up down restart build install env migrate fresh seed test lint fix stan check docs e2e shell logs
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -55,6 +55,10 @@ check: lint stan test ## Definition of done: lint + stan + tests
 
 docs: ## Export OpenAPI spec to docs/api/openapi.json
 	$(EXEC) php artisan scramble:export --path=docs/api/openapi.json
+
+e2e: fresh ## Run the Postman collection end-to-end against the running stack (Newman in Docker)
+	docker run --rm --network products-api_backend -v "$(CURDIR)/docs/api:/etc/newman:ro" \
+		postman/newman:6-alpine run postman_collection.json --env-var baseUrl=http://web/api/v1
 
 shell: ## Open a shell in the app container
 	$(DC) exec app sh

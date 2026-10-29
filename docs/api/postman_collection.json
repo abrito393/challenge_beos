@@ -1,0 +1,1004 @@
+{
+  "info": {
+    "_postman_id": "f7e6388a-d4e4-5f7e-ae46-bb40c3a65d1b",
+    "name": "Products API",
+    "description": "Colección ejecutable de la Products API. Corre las carpetas en orden: cada request guarda lo que necesita el siguiente (token, ids). Los tests de cada request verifican status, Problem Details y reglas de negocio.\n\nLevanta el stack con `make setup` y ejecuta: `npx newman run docs/api/postman_collection.json`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "viewerToken",
+      "value": ""
+    },
+    {
+      "key": "usdId",
+      "value": ""
+    },
+    {
+      "key": "eurId",
+      "value": ""
+    },
+    {
+      "key": "mxnId",
+      "value": ""
+    },
+    {
+      "key": "productId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "description": "Obtén un token Bearer. El login de admin guarda `{{token}}`; el de viewer, `{{viewerToken}}`.",
+      "item": [
+        {
+          "name": "Login (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "token"
+              ]
+            },
+            "description": "Credenciales demo de administrador. Guarda el token en `{{token}}`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password\",\n  \"device_name\": \"postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"Bearer with read+write\", () => { pm.expect(d.token_type).to.eql(\"Bearer\"); pm.expect(d.abilities).to.eql([\"products:read\",\"products:write\"]); });",
+                  "pm.collectionVariables.set(\"token\", d.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (viewer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "token"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"viewer@example.com\",\n  \"password\": \"password\",\n  \"device_name\": \"postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"Read-only abilities\", () => pm.expect(d.abilities).to.eql([\"products:read\"]));",
+                  "pm.collectionVariables.set(\"viewerToken\", d.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login with wrong password → 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "token"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"wrong\",\n  \"device_name\": \"postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Problem Details\", () => { pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\"); pm.expect(pm.response.json()).to.include.keys(\"type\",\"title\",\"status\",\"detail\",\"instance\"); });",
+                  "pm.test(\"Generic message\", () => pm.expect(pm.response.json().type).to.eql(\"/problems/invalid-credentials\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"No password exposed\", () => pm.expect(pm.response.json().data).to.not.have.property(\"password\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Currencies",
+      "item": [
+        {
+          "name": "List currencies",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/currencies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "currencies"
+              ]
+            },
+            "description": "Guarda los ids de USD, EUR y MXN para los siguientes requests."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const list = pm.response.json().data;",
+                  "const id = code => list.find(c => c.code === code).id;",
+                  "pm.test(\"exchange_rate is a decimal string\", () => pm.expect(list[0].exchange_rate).to.be.a(\"string\"));",
+                  "pm.collectionVariables.set(\"usdId\", id(\"USD\")); pm.collectionVariables.set(\"eurId\", id(\"EUR\")); pm.collectionVariables.set(\"mxnId\", id(\"MXN\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Products",
+      "item": [
+        {
+          "name": "List products (filters + sort)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products?filter[name]=laptop&filter[min_price]=100&sort=-price&per_page=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "filter[name]",
+                  "value": "laptop"
+                },
+                {
+                  "key": "filter[min_price]",
+                  "value": "100"
+                },
+                {
+                  "key": "sort",
+                  "value": "-price"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Filtros: `filter[name]`, `filter[currency_id]`, `filter[min_price]`, `filter[max_price]`. Orden: `name`, `price`, `created_at` (prefijo `-` = descendente). `per_page` máx. 100."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Paginated\", () => pm.expect(pm.response.json()).to.have.keys(\"data\",\"links\",\"meta\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Laptop Pro 14\",\n  \"description\": \"Laptop de 14 pulgadas, 16 GB RAM\",\n  \"price\": \"1299.99\",\n  \"currency_id\": \"{{usdId}}\",\n  \"tax_cost\": \"207.99\",\n  \"manufacturing_cost\": \"650.00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"Location header\", () => pm.response.to.have.header(\"Location\"));",
+                  "pm.test(\"Amounts as exact strings\", () => { pm.expect(d.price).to.eql(\"1299.99\"); pm.expect(d.manufacturing_cost).to.eql(\"650.00\"); });",
+                  "pm.collectionVariables.set(\"productId\", d.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create product with invalid data → 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"price\": \"-1\",\n  \"tax_cost\": \"1.999\",\n  \"currency_id\": 999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"Problem Details\", () => { pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\"); pm.expect(pm.response.json()).to.include.keys(\"type\",\"title\",\"status\",\"detail\",\"instance\"); });",
+                  "pm.test(\"Field errors\", () => pm.expect(pm.response.json().errors).to.include.keys(\"name\",\"price\",\"tax_cost\",\"currency_id\",\"description\",\"manufacturing_cost\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create product as viewer → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Laptop Pro 14\",\n  \"description\": \"Laptop de 14 pulgadas, 16 GB RAM\",\n  \"price\": \"1299.99\",\n  \"currency_id\": \"{{usdId}}\",\n  \"tax_cost\": \"207.99\",\n  \"manufacturing_cost\": \"650.00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{viewerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Problem Details\", () => { pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\"); pm.expect(pm.response.json()).to.include.keys(\"type\",\"title\",\"status\",\"detail\",\"instance\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get product",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Embedded currency\", () => pm.expect(pm.response.json().data.currency.code).to.eql(\"USD\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update product (PUT, full replacement)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Laptop Pro 14 (2026)\",\n  \"description\": \"Laptop de 14 pulgadas, 16 GB RAM\",\n  \"price\": \"1249.50\",\n  \"currency_id\": \"{{usdId}}\",\n  \"tax_cost\": \"207.99\",\n  \"manufacturing_cost\": \"650.00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Updated\", () => pm.expect(pm.response.json().data.price).to.eql(\"1249.50\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Product prices",
+      "item": [
+        {
+          "name": "List prices (empty)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/prices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}",
+                "prices"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"No prices yet\", () => pm.expect(pm.response.json().data).to.eql([]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create price (explicit)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/prices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}",
+                "prices"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currency_id\": \"{{eurId}}\",\n  \"price\": \"1149.00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Stored as sent\", () => pm.expect(pm.response.json().data.price).to.eql(\"1149.00\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create price (computed from exchange rate)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/prices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}",
+                "prices"
+              ]
+            },
+            "description": "Sin `price`: se calcula `precio_base × tasa_destino / tasa_origen` con aritmética decimal exacta.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currency_id\": \"{{mxnId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"1249.50 USD × 18.50 = 23115.75 MXN\", () => pm.expect(pm.response.json().data.price).to.eql(\"23115.75\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Duplicate currency → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/prices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}",
+                "prices"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currency_id\": \"{{eurId}}\",\n  \"price\": \"1.00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Problem Details\", () => { pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\"); pm.expect(pm.response.json()).to.include.keys(\"type\",\"title\",\"status\",\"detail\",\"instance\"); });",
+                  "pm.test(\"Type\", () => pm.expect(pm.response.json().type).to.eql(\"/problems/price-already-exists\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Base currency → 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/prices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}",
+                "prices"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currency_id\": \"{{usdId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"Problem Details\", () => { pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\"); pm.expect(pm.response.json()).to.include.keys(\"type\",\"title\",\"status\",\"detail\",\"instance\"); });",
+                  "pm.test(\"Type\", () => pm.expect(pm.response.json().type).to.eql(\"/problems/price-in-base-currency\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List prices",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/prices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}",
+                "prices"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"EUR and MXN, by code\", () => pm.expect(pm.response.json().data.map(p => p.currency.code)).to.eql([\"EUR\",\"MXN\"]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Delete & logout",
+      "item": [
+        {
+          "name": "Delete product (soft delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get deleted product → 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Problem Details\", () => { pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\"); pm.expect(pm.response.json()).to.include.keys(\"type\",\"title\",\"status\",\"detail\",\"instance\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout (revoke token)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "token"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Use revoked token → 401",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Problem Details\", () => { pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\"); pm.expect(pm.response.json()).to.include.keys(\"type\",\"title\",\"status\",\"detail\",\"instance\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

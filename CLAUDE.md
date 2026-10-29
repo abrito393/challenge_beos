@@ -21,6 +21,7 @@ make up      # levantar contenedores
 make check   # pint --test + larastan max + pest  (definición de "terminado")
 make test    # sólo tests
 make docs    # exportar OpenAPI a docs/api/openapi.json
+make e2e     # colección Postman end-to-end (Newman en Docker)
 make shell   # shell en el contenedor app
 ```
 Nunca ejecutar tests contra la base de desarrollo (`products_api`). Los tests usan `products_api_testing`.

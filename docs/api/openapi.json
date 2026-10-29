@@ -1,0 +1,1399 @@
+{
+    "openapi": "3.1.2",
+    "info": {
+        "title": "Products API",
+        "version": "1.0.0",
+        "description": "API RESTful para gestionar productos y sus precios en m\u00faltiples divisas.\n\n## Autenticaci\u00f3n\n1. `POST /auth/token` con `email`, `password` y `device_name` \u2192 devuelve un token Bearer.\n2. Enviar `Authorization: Bearer <token>` en cada request.\n3. Los permisos dependen del rol: **admin** \u2192 `products:read` + `products:write`; **viewer** \u2192 s\u00f3lo `products:read`.\n\nUsuarios demo: `admin@example.com` / `password` y `viewer@example.com` / `password`.\n\n## Dinero\nTodos los montos viajan como **string decimal con 2 decimales** (`\"1299.99\"`), nunca como float.\nLas tasas de cambio usan 8 decimales y se expresan como unidades de la divisa por 1 USD.\n\n## Errores\nTodos los errores usan [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457) (`application/problem+json`).\nEl campo `type` identifica el error de forma estable (ej. `/problems/price-already-exists`).\n\n## L\u00edmites\n60 requests/min por usuario; 5 intentos de login/min por email + IP."
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8080/api/v1"
+        }
+    ],
+    "security": [
+        {
+            "http": []
+        }
+    ],
+    "paths": {
+        "/products": {
+            "post": {
+                "operationId": "products.store",
+                "description": "Monetary fields accept up to 2 decimals; sending them as strings (e.g. \"19.99\") is recommended.",
+                "summary": "Create a product",
+                "tags": [
+                    "CreateProduct"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateProductRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`ProductResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProductResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "The token lacks the required ability.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; see the `Retry-After` header.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "operationId": "products.index",
+                "description": "Paginated, filterable (`filter[name]`, `filter[currency_id]`, `filter[min_price]`, `filter[max_price]`)\nand sortable (`sort=name|-name|price|-price|created_at|-created_at`, default `-created_at`).\nPrice filters compare each product's base price in its own base currency.",
+                "summary": "List products",
+                "tags": [
+                    "ListProducts"
+                ],
+                "parameters": [
+                    {
+                        "name": "filter[name]",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "filter[currency_id]",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "filter[min_price]",
+                        "in": "query",
+                        "schema": {
+                            "type": "number",
+                            "minimum": 0
+                        }
+                    },
+                    {
+                        "name": "filter[max_price]",
+                        "in": "query",
+                        "schema": {
+                            "type": "number",
+                            "minimum": 0
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "name",
+                                "-name",
+                                "price",
+                                "-price",
+                                "created_at",
+                                "-created_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `ProductResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ProductResource"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "description": "Generated paginator links.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "active": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "url",
+                                                            "label",
+                                                            "active"
+                                                        ]
+                                                    }
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Number of the last item in the slice.",
+                                                    "minimum": 1
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "description": "Total number of items being paginated.",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "The token lacks the required ability.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; see the `Retry-After` header.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{product}/prices": {
+            "post": {
+                "operationId": "products.prices.store",
+                "description": "Send `price` to set it explicitly, or omit it to compute it from the base price and current exchange rates.\nOne price per currency (409 on duplicates); the product's base currency is rejected (422).",
+                "summary": "Register a price in another currency",
+                "tags": [
+                    "CreateProductPrice"
+                ],
+                "parameters": [
+                    {
+                        "name": "product",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateProductPriceRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`ProductPriceResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProductPriceResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "The token lacks the required ability.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The product does not exist or was deleted.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "The product already has a price in that currency.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; see the `Retry-After` header.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "operationId": "products.prices.index",
+                "description": "Prices registered in currencies other than the product's base currency, ordered by currency code.",
+                "summary": "List the prices of a product",
+                "tags": [
+                    "ListProductPrices"
+                ],
+                "parameters": [
+                    {
+                        "name": "product",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `ProductPriceResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ProductPriceResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "The token lacks the required ability.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The product does not exist or was deleted.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; see the `Retry-After` header.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{product}": {
+            "delete": {
+                "operationId": "products.destroy",
+                "description": "Soft delete: the product disappears from the API but is kept in the database.",
+                "summary": "Delete a product",
+                "tags": [
+                    "DeleteProduct"
+                ],
+                "parameters": [
+                    {
+                        "name": "product",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "The token lacks the required ability.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The product does not exist or was deleted.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; see the `Retry-After` header.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "operationId": "products.show",
+                "summary": "Get a product",
+                "tags": [
+                    "GetProduct"
+                ],
+                "parameters": [
+                    {
+                        "name": "product",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`ProductResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProductResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "The token lacks the required ability.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The product does not exist or was deleted.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; see the `Retry-After` header.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "operationId": "products.update",
+                "description": "Full replacement (PUT): every field is required.",
+                "summary": "Update a product",
+                "tags": [
+                    "UpdateProduct"
+                ],
+                "parameters": [
+                    {
+                        "name": "product",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateProductRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ProductResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProductResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "The token lacks the required ability.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The product does not exist or was deleted.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; see the `Retry-After` header.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "operationId": "auth.me",
+                "summary": "Get the authenticated user",
+                "tags": [
+                    "GetAuthenticatedUser"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`AuthenticatedUserResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AuthenticatedUserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; see the `Retry-After` header.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/token": {
+            "post": {
+                "operationId": "auth.token.issue",
+                "description": "Exchanges valid credentials for a Bearer token whose abilities derive from the user role.",
+                "summary": "Issue an API token",
+                "tags": [
+                    "IssueToken"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IssueTokenRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`IssuedTokenResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/IssuedTokenResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "description": "Invalid credentials (same answer for unknown email and wrong password).",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; see the `Retry-After` header.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            },
+            "delete": {
+                "operationId": "auth.token.revoke",
+                "summary": "Revoke the current token",
+                "tags": [
+                    "RevokeToken"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; see the `Retry-After` header.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/currencies": {
+            "get": {
+                "operationId": "currencies.index",
+                "description": "Available currencies with their exchange rate against the reference currency (USD).",
+                "summary": "List currencies",
+                "tags": [
+                    "ListCurrencies"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `CurrencyResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CurrencyResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "The token lacks the required ability.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; see the `Retry-After` header.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "http": {
+                "type": "http",
+                "scheme": "bearer"
+            }
+        },
+        "schemas": {
+            "AuthenticatedUserResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "admin",
+                            "viewer"
+                        ]
+                    },
+                    "abilities": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "email",
+                    "role",
+                    "abilities"
+                ],
+                "title": "AuthenticatedUserResource"
+            },
+            "CreateProductPriceRequest": {
+                "type": "object",
+                "properties": {
+                    "currency_id": {
+                        "type": "integer"
+                    },
+                    "price": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "description": "Optional: when omitted it is computed from the base price and exchange rates.",
+                        "maximum": 9999999999999.99
+                    }
+                },
+                "required": [
+                    "currency_id"
+                ],
+                "title": "CreateProductPriceRequest"
+            },
+            "CreateProductRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 2000
+                    },
+                    "price": {
+                        "type": "number",
+                        "maximum": 9999999999999.99
+                    },
+                    "currency_id": {
+                        "type": "integer"
+                    },
+                    "tax_cost": {
+                        "type": "number",
+                        "maximum": 9999999999999.99
+                    },
+                    "manufacturing_cost": {
+                        "type": "number",
+                        "maximum": 9999999999999.99
+                    }
+                },
+                "required": [
+                    "name",
+                    "description",
+                    "price",
+                    "currency_id",
+                    "tax_cost",
+                    "manufacturing_cost"
+                ],
+                "title": "CreateProductRequest"
+            },
+            "CurrencyResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "code": {
+                        "type": "string",
+                        "examples": [
+                            "EUR"
+                        ]
+                    },
+                    "name": {
+                        "type": "string",
+                        "examples": [
+                            "Euro"
+                        ]
+                    },
+                    "symbol": {
+                        "type": "string",
+                        "examples": [
+                            "\u20ac"
+                        ]
+                    },
+                    "exchange_rate": {
+                        "type": "string",
+                        "description": "Units of this currency per 1 unit of the reference currency, as a decimal string.",
+                        "examples": [
+                            "0.92000000"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "code",
+                    "name",
+                    "symbol",
+                    "exchange_rate"
+                ],
+                "title": "CurrencyResource"
+            },
+            "IssueTokenRequest": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 255
+                    },
+                    "password": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "device_name": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "email",
+                    "password",
+                    "device_name"
+                ],
+                "title": "IssueTokenRequest"
+            },
+            "IssuedTokenResource": {
+                "type": "object",
+                "properties": {
+                    "token": {
+                        "type": "string",
+                        "examples": [
+                            "1|zQmXKx3yW8..."
+                        ]
+                    },
+                    "token_type": {
+                        "type": "string",
+                        "const": "Bearer"
+                    },
+                    "abilities": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "expires_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "token",
+                    "token_type",
+                    "abilities",
+                    "expires_at"
+                ],
+                "title": "IssuedTokenResource"
+            },
+            "ProblemDetails": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "description": "Stable error identifier.",
+                        "examples": [
+                            "/problems/product-not-found"
+                        ]
+                    },
+                    "title": {
+                        "type": "string",
+                        "examples": [
+                            "Not Found"
+                        ]
+                    },
+                    "status": {
+                        "type": "integer",
+                        "examples": [
+                            404
+                        ]
+                    },
+                    "detail": {
+                        "type": "string",
+                        "examples": [
+                            "Product 9 was not found."
+                        ]
+                    },
+                    "instance": {
+                        "type": "string",
+                        "examples": [
+                            "/api/v1/products/9"
+                        ]
+                    }
+                },
+                "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "instance"
+                ],
+                "title": "ProblemDetails"
+            },
+            "ProductPriceResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "product_id": {
+                        "type": "integer"
+                    },
+                    "price": {
+                        "type": "string",
+                        "description": "Price in this currency, as a decimal string.",
+                        "examples": [
+                            "92.00"
+                        ]
+                    },
+                    "currency": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "code": {
+                                "type": "string",
+                                "examples": [
+                                    "EUR"
+                                ]
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "code",
+                            "name",
+                            "symbol"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "product_id",
+                    "price",
+                    "currency",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ProductPriceResource"
+            },
+            "ProductResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string",
+                        "examples": [
+                            "Laptop Pro 14"
+                        ]
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "price": {
+                        "type": "string",
+                        "description": "Price in the base currency, as a decimal string (never a float).",
+                        "examples": [
+                            "1299.99"
+                        ]
+                    },
+                    "currency": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "code": {
+                                "type": "string",
+                                "examples": [
+                                    "USD"
+                                ]
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "symbol": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "code",
+                            "name",
+                            "symbol"
+                        ]
+                    },
+                    "tax_cost": {
+                        "type": "string",
+                        "examples": [
+                            "207.99"
+                        ]
+                    },
+                    "manufacturing_cost": {
+                        "type": "string",
+                        "examples": [
+                            "650.00"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "price",
+                    "currency",
+                    "tax_cost",
+                    "manufacturing_cost",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ProductResource"
+            },
+            "UpdateProductRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 2000
+                    },
+                    "price": {
+                        "type": "number",
+                        "maximum": 9999999999999.99
+                    },
+                    "currency_id": {
+                        "type": "integer"
+                    },
+                    "tax_cost": {
+                        "type": "number",
+                        "maximum": 9999999999999.99
+                    },
+                    "manufacturing_cost": {
+                        "type": "number",
+                        "maximum": 9999999999999.99
+                    }
+                },
+                "required": [
+                    "name",
+                    "description",
+                    "price",
+                    "currency_id",
+                    "tax_cost",
+                    "manufacturing_cost"
+                ],
+                "title": "UpdateProductRequest"
+            },
+            "ValidationProblemDetails": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "description": "Stable error identifier.",
+                        "examples": [
+                            "/problems/product-not-found"
+                        ]
+                    },
+                    "title": {
+                        "type": "string",
+                        "examples": [
+                            "Not Found"
+                        ]
+                    },
+                    "status": {
+                        "type": "integer",
+                        "examples": [
+                            404
+                        ]
+                    },
+                    "detail": {
+                        "type": "string",
+                        "examples": [
+                            "Product 9 was not found."
+                        ]
+                    },
+                    "instance": {
+                        "type": "string",
+                        "examples": [
+                            "/api/v1/products/9"
+                        ]
+                    },
+                    "errors": {
+                        "type": "object",
+                        "examples": [
+                            {
+                                "price": [
+                                    "The price field must have 0-2 decimal places."
+                                ]
+                            }
+                        ],
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "type",
+                    "title",
+                    "status",
+                    "detail",
+                    "instance"
+                ],
+                "title": "ValidationProblemDetails"
+            }
+        },
+        "responses": {
+            "ValidationException": {
+                "description": "Validation error.",
+                "content": {
+                    "application/problem+json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ValidationProblemDetails"
+                        }
+                    }
+                }
+            },
+            "AuthenticationException": {
+                "description": "Missing, invalid, expired or revoked token.",
+                "content": {
+                    "application/problem+json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ProblemDetails"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Src\Shared\Infrastructure;
 
+use Dedoc\Scramble\Scramble;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Src\Shared\Infrastructure\Documentation\ApiDocumentation;
 
 final class SharedServiceProvider extends ServiceProvider
 {
@@ -19,5 +21,6 @@ final class SharedServiceProvider extends ServiceProvider
 
             return Limit::perMinute(60)->by(is_scalar($userId) ? 'user:'.$userId : 'ip:'.$request->ip());
         });
+        Scramble::afterOpenApiGenerated(new ApiDocumentation);
     }
 }
