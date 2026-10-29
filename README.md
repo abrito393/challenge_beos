@@ -16,29 +16,72 @@ Construida con **Spec-Driven Development**: cada funcionalidad tiene especificac
 
 ## Inicio rápido
 
-Requisitos: **Docker** y `make`. Nada más (ni PHP, ni Composer, ni MySQL locales).
+### Requisitos
+- **Docker** (Docker Desktop o Docker Engine con Compose v2).
+- **`make`**. Viene en macOS y Linux. En Windows, usa **WSL2** y ejecuta los comandos dentro de la terminal de Ubuntu.
+
+No hace falta tener PHP, Composer ni MySQL instalados: todo corre en contenedores.
+
+### Levantar el proyecto
 
 ```bash
-git clone git@github.com:abrito393/challenge_beos.git && cd challenge_beos
-make setup        # build + composer install + migraciones + datos demo
+git clone https://github.com/abrito393/challenge_beos.git
+cd challenge_beos
+make setup
+```
+
+`make setup` construye las imágenes, instala dependencias, crea la base de datos y carga los datos de demo. La primera vez tarda unos minutos, porque descarga imágenes. Termina con:
+
+```
+✅ API ready at http://localhost:8080/api/v1 — Swagger UI at http://localhost:8080/docs/api
 ```
 
 | | |
 |---|---|
 | API | `http://localhost:8080/api/v1` |
-| Swagger UI | `http://localhost:8080/docs/api` |
+| Swagger UI (probar desde el navegador) | `http://localhost:8080/docs/api` |
 | Usuario admin (lectura + escritura) | `admin@example.com` / `password` |
 | Usuario viewer (sólo lectura) | `viewer@example.com` / `password` |
 
+**Datos de demo:** 5 divisas (USD, EUR, MXN, COP, VES), 5 productos en distintas divisas, y la *Laptop Pro 14* (id 1) con precios en EUR y MXN.
+
+### Probar con Postman
+1. *Import* → selecciona `docs/api/postman_collection.json`.
+2. Ejecuta **`1. Auth → Login (admin)`**. El token se guarda solo y los demás requests lo usan.
+3. Prueba cualquier request: las variables ya apuntan a los datos de demo (producto 1, USD/EUR/MXN = 1/2/3).
+4. Para correr todo: clic derecho en la colección → **Run collection** (21 requests, 45 verificaciones). La última carpeta elimina el producto que creó la colección y revoca el token; para seguir probando a mano, vuelve a hacer login.
+
+Sin abrir Postman, `make e2e` ejecuta la misma colección con Newman en Docker.
+
+### Probar con curl
+
 ```bash
 # 1. Obtener un token
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/token \
+curl -s -X POST http://localhost:8080/api/v1/auth/token \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@example.com","password":"password","device_name":"cli"}' | jq -r .data.token)
+  -d '{"email":"admin@example.com","password":"password","device_name":"cli"}'
 
-# 2. Usarlo
-curl -s http://localhost:8080/api/v1/products -H "Authorization: Bearer $TOKEN" | jq
+# 2. Copiar el valor de "token" de la respuesta y usarlo
+curl -s http://localhost:8080/api/v1/products -H "Authorization: Bearer <token>"
 ```
+
+### Apagar, volver a levantar, reiniciar datos
+
+```bash
+make down    # detiene los contenedores (los datos se conservan)
+make up      # vuelve a levantarlos
+make fresh   # borra la base y la recrea con los datos de demo
+```
+
+### Problemas comunes
+
+| Síntoma | Solución |
+|---|---|
+| `port is already allocated` (8080 o 33060 ocupado) | La primera vez: `APP_PORT=8081 FORWARD_DB_PORT=33061 make setup` (los puertos quedan guardados en `.env`). Si ya existe `.env`, cámbialos ahí y ejecuta `make down && make up` |
+| `Cannot connect to the Docker daemon` | Abre Docker Desktop y espera a que esté en *running* |
+| `make: command not found` (Windows) | Ejecuta los comandos dentro de WSL2 |
+| Respuesta `401` | Falta el token o venció (24 h). Vuelve a hacer login |
+| Respuesta `403` | Estás usando el token del viewer, que sólo puede leer. Usa el del admin |
 
 ## Documentación de la API
 
