@@ -35,14 +35,6 @@ jobs:
       - name: Larastan (level max)
         run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
 
-      - name: OpenAPI document is up to date (docs are generated from code)
-        env:
-          APP_URL: http://localhost:8080
-          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-        run: |
-          php artisan scramble:export --path=/tmp/openapi.json
-          diff -u docs/api/openapi.json /tmp/openapi.json || (echo "::error::Run 'make docs' and commit docs/api/openapi.json" && exit 1)
-
   tests:
     name: Tests (MySQL 8.4)
     runs-on: ubuntu-latest
@@ -61,6 +53,7 @@ jobs:
       DB_PORT: 3306
       DB_USERNAME: root
       DB_PASSWORD: root
+      DB_DATABASE: products_api_testing
     steps:
       - uses: actions/checkout@v4
 
@@ -80,5 +73,14 @@ jobs:
       - name: Prepare environment
         run: cp .env.example .env && php artisan key:generate
 
+      - name: Migrate
+        run: php artisan migrate --force
+
       - name: Pest
         run: php artisan test --coverage --min=90
+
+      # Scramble introspects Eloquent columns, so this check needs the migrated database.
+      - name: OpenAPI document is up to date (docs are generated from code)
+        run: |
+          php artisan scramble:export --path=/tmp/openapi.json
+          diff -u docs/api/openapi.json /tmp/openapi.json || (echo "::error::Run 'make docs' and commit docs/api/openapi.json" && exit 1)
