@@ -45,3 +45,4 @@ Documentación en español. Código, identificadores, commits y nombres de tests
 
 ## Commits
 Conventional Commits con referencia a la tarea, ej. `feat(products): add index filters (T-002-06)`. No commitear sin que el usuario lo pida.
+Sin líneas `Co-Authored-By` ni atribuciones a Claude/IA en commits ni en PRs: el autor es únicamente Aquiles (`abrito393@gmail.com`).
