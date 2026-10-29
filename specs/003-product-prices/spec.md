@@ -1,6 +1,6 @@
 # 003 — Product prices (precios por divisa)
 
-- **Estado:** Approved
+- **Estado:** Done
 - **Autor:** Aquiles Brito
 - **Fecha:** 2026-10-29
 - **Depende de:** 001, 002, 004

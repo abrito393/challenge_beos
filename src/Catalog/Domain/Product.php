@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Src\Catalog\Domain;
 
+use Src\Catalog\Domain\Exceptions\PriceAlreadyExists;
+use Src\Catalog\Domain\Exceptions\PriceInBaseCurrency;
 use Src\Catalog\Domain\ValueObjects\ManufacturingCost;
 use Src\Catalog\Domain\ValueObjects\ProductDescription;
 use Src\Catalog\Domain\ValueObjects\ProductId;
@@ -17,6 +19,9 @@ use Src\Shared\Domain\ValueObjects\Money;
  */
 final class Product
 {
+    /**
+     * @param  list<ProductPrice>  $prices  prices in other currencies
+     */
     private function __construct(
         private readonly ?ProductId $id,
         private ProductName $name,
@@ -24,6 +29,7 @@ final class Product
         private Money $price,
         private TaxCost $taxCost,
         private ManufacturingCost $manufacturingCost,
+        private array $prices,
     ) {}
 
     public static function create(
@@ -33,9 +39,12 @@ final class Product
         TaxCost $taxCost,
         ManufacturingCost $manufacturingCost,
     ): self {
-        return new self(null, $name, $description, $price, $taxCost, $manufacturingCost);
+        return new self(null, $name, $description, $price, $taxCost, $manufacturingCost, []);
     }
 
+    /**
+     * @param  list<ProductPrice>  $prices
+     */
     public static function fromPersistence(
         ProductId $id,
         ProductName $name,
@@ -43,8 +52,41 @@ final class Product
         Money $price,
         TaxCost $taxCost,
         ManufacturingCost $manufacturingCost,
+        array $prices = [],
     ): self {
-        return new self($id, $name, $description, $price, $taxCost, $manufacturingCost);
+        return new self($id, $name, $description, $price, $taxCost, $manufacturingCost, $prices);
+    }
+
+    /**
+     * Registers the price of this product in another currency.
+     *
+     * @throws PriceInBaseCurrency when the currency is the product's base one (RN-003-2)
+     * @throws PriceAlreadyExists when the product already has a price in that currency (RN-003-1)
+     */
+    public function addPriceIn(Money $price): ProductPrice
+    {
+        $currencyId = $price->currencyId();
+
+        if ($currencyId->equals($this->price->currencyId())) {
+            throw PriceInBaseCurrency::forCurrency($currencyId->value());
+        }
+
+        foreach ($this->prices as $existing) {
+            if ($existing->price()->currencyId()->equals($currencyId)) {
+                throw PriceAlreadyExists::forCurrency($currencyId->value());
+            }
+        }
+
+        $productPrice = new ProductPrice(null, $price);
+        $this->prices[] = $productPrice;
+
+        return $productPrice;
+    }
+
+    /** @return list<ProductPrice> */
+    public function prices(): array
+    {
+        return $this->prices;
     }
 
     /** Full replacement of the product data (PUT semantics, AC-002-13). */

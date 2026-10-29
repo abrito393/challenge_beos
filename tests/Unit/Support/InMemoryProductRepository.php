@@ -7,10 +7,13 @@ namespace Tests\Unit\Support;
 use DateTimeImmutable;
 use Src\Catalog\Application\CurrencySummary;
 use Src\Catalog\Application\ProductFinder;
+use Src\Catalog\Application\ProductPriceFinder;
+use Src\Catalog\Application\ProductPriceView;
 use Src\Catalog\Application\ProductView;
 use Src\Catalog\Domain\Product;
 use Src\Catalog\Domain\ProductRepository;
 use Src\Catalog\Domain\ValueObjects\ProductId;
+use Src\Shared\Domain\ValueObjects\CurrencyId;
 
 /** Write port over an in-memory store; finder() exposes the read port over the same data. */
 final class InMemoryProductRepository implements ProductRepository
@@ -31,6 +34,7 @@ final class InMemoryProductRepository implements ProductRepository
 
         $this->products[$id->value()] = Product::fromPersistence(
             $id, $product->name(), $product->description(), $product->price(), $product->taxCost(), $product->manufacturingCost(),
+            $product->prices(),
         );
 
         return $id;
@@ -69,6 +73,46 @@ final class InMemoryProductRepository implements ProductRepository
                     $now,
                     $now,
                 );
+            }
+        };
+    }
+
+    public function priceFinder(): ProductPriceFinder
+    {
+        return new readonly class($this) implements ProductPriceFinder
+        {
+            public function __construct(private InMemoryProductRepository $store) {}
+
+            public function forProduct(ProductId $productId): array
+            {
+                $product = $this->store->find($productId);
+                $views = [];
+
+                foreach ($product?->prices() ?? [] as $index => $price) {
+                    $currencyId = $price->price()->currencyId()->value();
+                    $now = new DateTimeImmutable('2026-10-29T12:00:00Z');
+                    $views[] = new ProductPriceView(
+                        $index + 1,
+                        $productId->value(),
+                        $price->price()->amount()->value(),
+                        new CurrencySummary($currencyId, 'C'.$currencyId, 'Currency '.$currencyId, '$'),
+                        $now,
+                        $now,
+                    );
+                }
+
+                return $views;
+            }
+
+            public function find(ProductId $productId, CurrencyId $currencyId): ?ProductPriceView
+            {
+                foreach ($this->forProduct($productId) as $view) {
+                    if ($view->currency->id === $currencyId->value()) {
+                        return $view;
+                    }
+                }
+
+                return null;
             }
         };
     }

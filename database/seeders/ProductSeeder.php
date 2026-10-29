@@ -34,5 +34,11 @@ final class ProductSeeder extends Seeder
                 'manufacturing_cost' => $manufacturing,
             ]);
         }
+
+        // A couple of prices in other currencies so GET /products/{id}/prices has data.
+        $laptop = EloquentProduct::query()->where('name', 'Laptop Pro 14')->firstOrFail();
+        foreach (['EUR' => '1199.00', 'MXN' => '24049.82'] as $code => $price) {
+            $laptop->prices()->updateOrCreate(['currency_id' => $currencies[$code]], ['price' => $price]);
+        }
     }
 }

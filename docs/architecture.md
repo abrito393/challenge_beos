@@ -20,7 +20,7 @@
                   └────────────────────────────┘        └──────────────┘
 ```
 
-- `Catalog` consume `Currency` **sólo** a través de su capa `Application` (`ConvertAmount`), nunca de su `Domain`/`Infrastructure`.
+- `Catalog` consume `Currency` **sólo** a través de su capa `Application` (`ConvertAmountUseCase`), nunca de su `Domain`/`Infrastructure`. Además lo hace detrás de un puerto propio (`Catalog\Application\CreateProductPrice\PriceConverter`), implementado por la *anti-corruption layer* `Catalog\Infrastructure\Currency\CurrencyContextPriceConverter`: es el único archivo de Catalog que conoce a Currency.
 - `Auth` es un subdominio genérico: casi todo es Infraestructura sobre Sanctum.
 
 ## Capas y regla de dependencia

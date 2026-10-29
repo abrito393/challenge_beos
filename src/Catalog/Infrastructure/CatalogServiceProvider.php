@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Src\Catalog\Infrastructure;
 
 use Illuminate\Support\ServiceProvider;
+use Src\Catalog\Application\CreateProductPrice\PriceConverter;
 use Src\Catalog\Application\ListProducts\ProductSearcher;
 use Src\Catalog\Application\ProductFinder;
+use Src\Catalog\Application\ProductPriceFinder;
 use Src\Catalog\Domain\ProductRepository;
+use Src\Catalog\Infrastructure\Currency\CurrencyContextPriceConverter;
 use Src\Catalog\Infrastructure\Persistence\EloquentProductFinder;
+use Src\Catalog\Infrastructure\Persistence\EloquentProductPriceFinder;
 use Src\Catalog\Infrastructure\Persistence\EloquentProductRepository;
 use Src\Catalog\Infrastructure\Persistence\EloquentProductSearcher;
 use Src\Catalog\Infrastructure\Persistence\Filters\CurrencyFilter;
@@ -21,6 +25,8 @@ final class CatalogServiceProvider extends ServiceProvider
     public array $bindings = [
         ProductRepository::class => EloquentProductRepository::class,
         ProductFinder::class => EloquentProductFinder::class,
+        ProductPriceFinder::class => EloquentProductPriceFinder::class,
+        PriceConverter::class => CurrencyContextPriceConverter::class,
     ];
 
     public function register(): void

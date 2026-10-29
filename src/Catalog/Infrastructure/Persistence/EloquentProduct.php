@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Src\Catalog\Infrastructure\Persistence;
 
 use Database\Factories\ProductFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -21,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
+ * @property-read Collection<int, EloquentProductPrice> $prices
  */
 final class EloquentProduct extends Model
 {
@@ -31,6 +34,12 @@ final class EloquentProduct extends Model
 
     /** @var list<string> */
     protected $fillable = ['name', 'description', 'price', 'currency_id', 'tax_cost', 'manufacturing_cost'];
+
+    /** @return HasMany<EloquentProductPrice, $this> */
+    public function prices(): HasMany
+    {
+        return $this->hasMany(EloquentProductPrice::class, 'product_id');
+    }
 
     protected static function newFactory(): ProductFactory
     {
