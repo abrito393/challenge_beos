@@ -40,7 +40,7 @@ Cada endpoint tiene su propio **Controller invokable**, su propio **Request** y 
 - Cada UseCase tiene **un único método público** `execute(...)`.
 
 ### O: Open/Closed
-- El `ProblemDetailsRenderer` no tiene un `switch` que crezca por cada excepción. Las excepciones de dominio implementan `Src\Shared\Domain\Exceptions\HasProblemDetails` (`status()`, `type()`, `title()`), así que agregar un error nuevo no modifica el renderer.
+- El `ProblemDetailsRenderer` no crece con cada error nuevo. Las excepciones de dominio extienden una **categoría** abstracta del Shared kernel (`NotFound`, `Conflict`, `InvalidValue`, `AuthenticationFailed`) y declaran un `errorCode()` estable. El renderer mapea categoría → status HTTP y usa `errorCode()` como `type` (`/problems/price-already-exists`). Un error nuevo es una clase nueva, sin modificar el renderer. Además, el dominio no conoce códigos HTTP. *(Enmienda 2026-10-29, spec 004: reemplaza la idea inicial de una interfaz `HasProblemDetails` con `status()`, que filtraba HTTP al dominio.)*
 - Los filtros del listado son una lista de clases `ProductFilter` registradas, no `if` encadenados.
 
 ### L: Liskov

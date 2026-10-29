@@ -4,44 +4,38 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use Src\Auth\Domain\UserRole;
+use Src\Auth\Infrastructure\Persistence\EloquentUser;
 
 /**
- * @extends Factory<User>
+ * @extends Factory<EloquentUser>
  */
 final class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
+    protected $model = EloquentUser::class;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
+    private static ?string $password = null;
+
+    /** @return array<string, mixed> */
     public function definition(): array
     {
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
             'password' => self::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'role' => UserRole::Viewer,
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        return $this->state(['role' => UserRole::Admin]);
+    }
+
+    public function viewer(): static
+    {
+        return $this->state(['role' => UserRole::Viewer]);
     }
 }

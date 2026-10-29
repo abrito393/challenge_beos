@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 /*
-| Each bounded context registers its own routes from its ServiceProvider
-| (src/<Context>/Infrastructure/Http/routes.php). This file stays as the
-| entry point of the `api` group (prefix: api/v1).
+| Composition root of the `api` group (prefix: api/v1). Each bounded context
+| owns its routes in src/<Context>/Infrastructure/Http/routes.php.
 */
+
+require base_path('src/Auth/Infrastructure/Http/routes.php');

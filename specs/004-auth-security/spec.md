@@ -1,6 +1,6 @@
 # 004 — Auth & Security
 
-- **Estado:** Approved
+- **Estado:** Done
 - **Autor:** Aquiles Brito
 - **Fecha:** 2026-10-29
 - **ADRs relacionados:** [0005 Problem Details](../../docs/adr/0005-error-format-problem-details.md), [0008 Sanctum + abilities](../../docs/adr/0008-auth-sanctum-abilities.md)

@@ -109,7 +109,8 @@ src/                                        namespace Src\
 │   └── Infrastructure/                     EloquentCurrency, EloquentCurrencyRepository,
 │                                           Http/ (ListCurrenciesController, CurrencyResource)
 ├── Auth/
-│   ├── Domain/                             UserRole, TokenAbility (enums), ValueObjects/ (Email, DeviceName)
+│   ├── Domain/                             User, UserRole, UserRepository, PasswordHasher (puertos),
+│   │                                       ValueObjects/ (UserId, Email, DeviceName), Exceptions/
 │   ├── Application/                        IssueToken/ (IssueTokenUseCase + IssueTokenCommand),
 │   │                                       RevokeToken/RevokeTokenUseCase
 │   └── Infrastructure/                     EloquentUser (Sanctum), Http/ (IssueTokenController,
@@ -117,9 +118,10 @@ src/                                        namespace Src\
 │                                           GetAuthenticatedUserController)
 └── Shared/
     ├── Domain/                             ValueObjects/ (Amount, Money), TransactionManager (puerto),
-    │                                       Exceptions/ (DomainException, HasProblemDetails)
-    └── Infrastructure/                     ProblemDetailsRenderer, ForceJsonResponse,
-                                            SecurityHeaders, LaravelTransactionManager
+    │                                       Security/TokenAbility, Exceptions/ (DomainException +
+    │                                       categorías NotFound, Conflict, InvalidValue, AuthenticationFailed)
+    └── Infrastructure/                     Http/ProblemDetails/ProblemDetailsRenderer, Http/Middleware/
+                                            (ForceJsonResponse, SecurityHeaders), SharedServiceProvider
 app/                                        sólo bootstrap del framework (providers)
 database/                                   migrations, factories, seeders
 tests/

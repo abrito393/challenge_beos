@@ -24,7 +24,8 @@ Usaremos RFC 9457. Un único renderer en `bootstrap/app.php` (`withExceptions`) 
 | `AuthenticationException` | 401 | `/problems/unauthenticated` |
 | `AuthorizationException`, `MissingAbilityException` | 403 | `/problems/forbidden` |
 | `ModelNotFoundException`, `NotFoundHttpException` | 404 | `/problems/not-found` |
-| `ConflictException` (dominio), `UniqueConstraintViolationException` | 409 | `/problems/conflict` |
+| Dominio: categoría `NotFound` / `Conflict` / `InvalidValue` / `AuthenticationFailed` | 404 / 409 / 422 / 401 | `/problems/{errorCode}` (ej. `/problems/invalid-credentials`) |
+| `UniqueConstraintViolationException` (carrera concurrente) | 409 | `/problems/conflict` |
 | `ThrottleRequestsException` | 429 | `/problems/too-many-requests` (+ `Retry-After`) |
 | `Throwable` (resto) | 500 | `about:blank`, `detail` genérico |
 

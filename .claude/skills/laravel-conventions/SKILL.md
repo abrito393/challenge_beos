@@ -81,7 +81,19 @@ Puerto `Src\Shared\Domain\TransactionManager` con implementación Laravel en `Sh
 - Prohibido `(float)`, `floatval`, `round()` y operadores `* /` sobre montos.
 
 ## Errores
-Nunca construir respuestas de error en controllers. Se lanzan excepciones de dominio (`PriceAlreadyExists` → 409, `ProductNotFound` → 404, `PriceInBaseCurrency` → 422) y el `ProblemDetailsRenderer` las traduce (ADR-0005). La violación de `UNIQUE` en la DB también se mapea a 409 (concurrencia).
+Nunca construir respuestas de error en controllers. Cada error de dominio es una clase `final` que extiende una **categoría** de `Src\Shared\Domain\Exceptions` y define `errorCode()` (kebab-case), con un named constructor:
+
+| Categoría | HTTP | Ejemplo |
+|---|---|---|
+| `NotFound` | 404 | `ProductNotFound::withId($id)` |
+| `Conflict` | 409 | `PriceAlreadyExists::forCurrency($code)` |
+| `InvalidValue` | 422 | `InvalidEmail::because($value)` |
+| `AuthenticationFailed` | 401 | `InvalidCredentials::create()` |
+
+El `ProblemDetailsRenderer` las traduce sin conocerlas una por una (ADR-0005, ADR-0010). Los mensajes de dominio se escriben para el cliente, porque se exponen en `detail`. La violación de `UNIQUE` en la DB también se mapea a 409 (concurrencia).
+
+## Abilities
+En las rutas, nunca strings sueltos: `'abilities:'.TokenAbility::ProductsWrite->value` (`Src\Shared\Domain\Security\TokenAbility`).
 
 ## Base de datos
 - Migraciones en `database/migrations` con FKs explícitas (`restrictOnDelete` / `cascadeOnDelete`), índices y `UNIQUE`.

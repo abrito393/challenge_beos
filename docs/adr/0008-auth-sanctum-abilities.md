@@ -21,7 +21,9 @@ El criterio "Seguridad: medidas adecuadas para proteger los datos" no se cumple 
 - Abilities `products:read` y `products:write`, derivadas del rol del usuario (`Src\Auth\Domain\UserRole`) en el servidor.
 - Rutas protegidas con `auth:sanctum` + middleware `abilities:` (`CheckAbilities`) declarado en cada ruta. No se usan Policies: no hay reglas por registro (ownership). Si aparecieran, se agregaría una Policy por agregado.
 - Login con rate limit estricto (5/min por email+IP) y mensaje de error genérico.
-- Ability values en un enum `Src\Auth\Domain\TokenAbility`, sin strings mágicos.
+- Ability values en un enum `Src\Shared\Domain\Security\TokenAbility`, sin strings mágicos.
+
+> **Enmienda (2026-10-29, spec 004):** `TokenAbility` se movió de `Auth\Domain` al **Shared kernel**. Las rutas de `Catalog` y `Currency` necesitan declarar la ability requerida, y la regla de límites entre contextos (ADR-0009) les prohíbe importar `Auth\Domain`. Las abilities son lenguaje publicado entre contextos, no un detalle interno de Auth. `UserRole` (qué rol obtiene qué abilities) sí permanece en `Auth\Domain`.
 
 ## Consecuencias
 

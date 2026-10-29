@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess;
 use Dedoc\Scramble\OpenApiVersion;
+use Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy;
 
 return [
     /*
@@ -186,5 +187,5 @@ return [
      * ],
      */
     // 'security_strategy' => \Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
-    'security_strategy' => null,
+    'security_strategy' => MiddlewareAuthSecurityStrategy::class,
 ];

@@ -18,7 +18,7 @@ Leyenda: `[ ]` pendiente · `[~]` en curso · `[x]` hecha
 | T-000-08 | Instalar `brick/math`, `dedoc/scramble`, `laravel/sanctum` (`install:api`) | — | `composer validate` ok | [x] |
 | T-000-09 | GitHub Actions `ci.yml` | AC-000-04 | Workflow válido (`act` o primer push) | [~] |
 | T-000-10 | README: setup, comandos, estructura; actualizar estado en `specs/README.md` | — | Un tercero puede levantar el proyecto sólo con el README | [x] |
-| T-000-11 | Restaurar `--coverage --min=90` en `ci.yml` al cerrar la feature 004 | AC-000-04 | CI verde con el umbral activo | [ ] |
+| T-000-11 | Restaurar `--coverage --min=90` en `ci.yml` al cerrar la feature 004 | AC-000-04 | CI verde con el umbral activo | [x] |
 
 ## Notas de implementación
 

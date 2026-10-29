@@ -2,7 +2,7 @@
 
 API RESTful en **Laravel 12** para gestionar productos y sus precios en múltiples divisas. Construida con **Spec-Driven Development**: cada funcionalidad tiene especificación, plan técnico, tareas y tests trazables a sus criterios de aceptación.
 
-> 🚧 **Estado:** specs aprobadas · foundation (000) lista · siguiente: Auth & Security (004). Ver [`specs/README.md`](./specs/README.md).
+> 🚧 **Estado:** foundation (000) y Auth & Security (004) listas · siguiente: Currencies (001). Ver [`specs/README.md`](./specs/README.md).
 
 ## Inicio rápido
 

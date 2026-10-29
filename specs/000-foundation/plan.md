@@ -41,7 +41,7 @@
 ## 4. Estructura DDD (ADR-0009)
 
 - `composer.json` → `"autoload": {"psr-4": {"App\\": "app/", "Src\\": "src/"}}`.
-- Un `ServiceProvider` por contexto en `src/<Ctx>/Infrastructure/`, registrado en `bootstrap/providers.php`. Cada uno registra sus bindings puerto → adaptador y carga sus rutas.
+- Un `ServiceProvider` por contexto en `src/<Ctx>/Infrastructure/`, registrado en `bootstrap/providers.php`. Cada uno registra sus bindings puerto → adaptador. Las rutas de cada contexto (`src/<Ctx>/Infrastructure/Http/routes.php`) se incluyen desde `routes/api.php`, que actúa como composition root y hereda el grupo `api` y el prefijo `api/v1`.
 - `phpstan.neon` y `pint.json` incluyen `src/`.
 - `tests/Architecture/*.php` con `arch()` de Pest para las reglas de dependencia.
 
