@@ -58,9 +58,9 @@ Todo concepto con reglas propias es un VO `final readonly`, validado en su const
 
 | Contexto | Value Objects |
 |---|---|
-| Shared | `Amount` (decimal ≥ 0, escala 2, sobre `BigDecimal`), `Money` (`Amount` + `CurrencyId`) |
+| Shared | `Amount` (decimal ≥ 0, escala 2, sobre `BigDecimal`), `Money` (`Amount` + `CurrencyId`), `CurrencyId` (identidad publicada de una divisa) |
 | Catalog | `ProductId`, `ProductName` (1–255, trim), `ProductDescription` (1–2000), `TaxCost`, `ManufacturingCost` |
-| Currency | `CurrencyId`, `CurrencyCode` (ISO 4217, 3 letras mayúsculas), `CurrencyName`, `CurrencySymbol`, `ExchangeRate` (> 0, escala 8) |
+| Currency | `CurrencyCode` (ISO 4217, 3 letras mayúsculas), `CurrencyName`, `CurrencySymbol`, `ExchangeRate` (> 0, escala 8) |
 | Auth | `Email`, `DeviceName` |
 
 - Las entidades sólo aceptan VOs, nunca primitivos.

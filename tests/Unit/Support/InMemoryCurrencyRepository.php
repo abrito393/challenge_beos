@@ -7,10 +7,10 @@ namespace Tests\Unit\Support;
 use Src\Currency\Domain\Currency;
 use Src\Currency\Domain\CurrencyRepository;
 use Src\Currency\Domain\ValueObjects\CurrencyCode;
-use Src\Currency\Domain\ValueObjects\CurrencyId;
 use Src\Currency\Domain\ValueObjects\CurrencyName;
 use Src\Currency\Domain\ValueObjects\CurrencySymbol;
 use Src\Currency\Domain\ValueObjects\ExchangeRate;
+use Src\Shared\Domain\ValueObjects\CurrencyId;
 
 final class InMemoryCurrencyRepository implements CurrencyRepository
 {

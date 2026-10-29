@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Src\Currency\Domain\Exceptions;
-
-use Src\Shared\Domain\Exceptions\InvalidValue;
+namespace Src\Shared\Domain\Exceptions;
 
 final class InvalidCurrencyId extends InvalidValue
 {

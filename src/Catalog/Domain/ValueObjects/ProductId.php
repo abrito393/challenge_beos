@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Src\Currency\Domain\ValueObjects;
+namespace Src\Catalog\Domain\ValueObjects;
 
-use Src\Currency\Domain\Exceptions\InvalidCurrencyId;
+use Src\Catalog\Domain\Exceptions\InvalidProductId;
 
-final readonly class CurrencyId
+final readonly class ProductId
 {
     public function __construct(private int $value)
     {
         if ($value < 1) {
-            throw InvalidCurrencyId::because((string) $value);
+            throw InvalidProductId::because((string) $value);
         }
     }
 

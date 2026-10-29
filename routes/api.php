@@ -9,3 +9,4 @@ declare(strict_types=1);
 
 require base_path('src/Auth/Infrastructure/Http/routes.php');
 require base_path('src/Currency/Infrastructure/Http/routes.php');
+require base_path('src/Catalog/Infrastructure/Http/routes.php');

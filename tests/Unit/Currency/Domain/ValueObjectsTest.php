@@ -3,15 +3,15 @@
 declare(strict_types=1);
 
 use Src\Currency\Domain\Exceptions\InvalidCurrencyCode;
-use Src\Currency\Domain\Exceptions\InvalidCurrencyId;
 use Src\Currency\Domain\Exceptions\InvalidCurrencyName;
 use Src\Currency\Domain\Exceptions\InvalidCurrencySymbol;
 use Src\Currency\Domain\Exceptions\InvalidExchangeRate;
 use Src\Currency\Domain\ValueObjects\CurrencyCode;
-use Src\Currency\Domain\ValueObjects\CurrencyId;
 use Src\Currency\Domain\ValueObjects\CurrencyName;
 use Src\Currency\Domain\ValueObjects\CurrencySymbol;
 use Src\Currency\Domain\ValueObjects\ExchangeRate;
+use Src\Shared\Domain\Exceptions\InvalidCurrencyId;
+use Src\Shared\Domain\ValueObjects\CurrencyId;
 
 it('normalizes ISO 4217 codes to uppercase', function (): void {
     expect((new CurrencyCode(' eur '))->value())->toBe('EUR')

@@ -13,7 +13,7 @@ final class DatabaseSeeder extends Seeder
         $this->call(CurrencySeeder::class);
 
         if (! app()->isProduction()) {
-            $this->call(UserSeeder::class);
+            $this->call([UserSeeder::class, ProductSeeder::class]);
         }
     }
 }

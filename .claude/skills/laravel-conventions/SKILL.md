@@ -45,7 +45,7 @@ final class CreateProductController
 ## Value Objects (ADR-0010)
 - Todo concepto con reglas es un VO `final readonly` en `Domain/ValueObjects/`: se valida en el constructor (lanza excepción de dominio) y expone `value()` y `equals()`.
 - Las entidades reciben **sólo VOs**. El UseCase construye los VOs a partir del Command.
-- Catálogo: `Amount`, `Money` (Shared) · `ProductId`, `ProductName`, `ProductDescription`, `TaxCost`, `ManufacturingCost` (Catalog) · `CurrencyId`, `CurrencyCode`, `CurrencyName`, `CurrencySymbol`, `ExchangeRate` (Currency) · `Email`, `DeviceName` (Auth).
+- Catálogo: `Amount`, `Money`, `CurrencyId` (Shared) · `ProductId`, `ProductName`, `ProductDescription`, `TaxCost`, `ManufacturingCost` (Catalog) · `CurrencyCode`, `CurrencyName`, `CurrencySymbol`, `ExchangeRate` (Currency) · `Email`, `DeviceName` (Auth).
 
 ## ¿Dónde va cada cosa?
 

@@ -101,7 +101,7 @@ src/                                        namespace Src\
 │       │   └── routes.php
 │       └── CatalogServiceProvider.php      bindings puerto → adaptador
 ├── Currency/
-│   ├── Domain/                             Currency, ValueObjects/ (CurrencyId, CurrencyCode,
+│   ├── Domain/                             Currency, ValueObjects/ (CurrencyCode,
 │   │                                       CurrencyName, CurrencySymbol, ExchangeRate),
 │   │                                       CurrencyConverter, CurrencyRepository
 │   ├── Application/                        ConvertAmount/ConvertAmountUseCase,
@@ -117,7 +117,8 @@ src/                                        namespace Src\
 │                                           IssueTokenRequest, RevokeTokenController,
 │                                           GetAuthenticatedUserController)
 └── Shared/
-    ├── Domain/                             ValueObjects/ (Amount, Money), TransactionManager (puerto),
+    ├── Application/                        Page<T> (resultado paginado sin Illuminate)
+    ├── Domain/                             ValueObjects/ (Amount, Money, CurrencyId),
     │                                       Security/TokenAbility, Exceptions/ (DomainException +
     │                                       categorías NotFound, Conflict, InvalidValue, AuthenticationFailed)
     └── Infrastructure/                     Http/ProblemDetails/ProblemDetailsRenderer, Http/Middleware/

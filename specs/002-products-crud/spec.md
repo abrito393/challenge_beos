@@ -1,6 +1,6 @@
 # 002 — Products CRUD
 
-- **Estado:** Approved
+- **Estado:** Done
 - **Autor:** Aquiles Brito
 - **Fecha:** 2026-10-29
 - **Depende de:** 001 (divisas), 004 (auth)

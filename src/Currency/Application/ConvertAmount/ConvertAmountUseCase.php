@@ -8,8 +8,8 @@ use Src\Currency\Domain\Currency;
 use Src\Currency\Domain\CurrencyConverter;
 use Src\Currency\Domain\CurrencyRepository;
 use Src\Currency\Domain\Exceptions\CurrencyNotFound;
-use Src\Currency\Domain\ValueObjects\CurrencyId;
 use Src\Shared\Domain\ValueObjects\Amount;
+use Src\Shared\Domain\ValueObjects\CurrencyId;
 
 /**
  * Public entry point of the Currency context for other contexts (ADR-0009):

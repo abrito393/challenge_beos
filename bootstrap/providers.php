@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Providers\AppServiceProvider;
 use Src\Auth\Infrastructure\AuthServiceProvider;
+use Src\Catalog\Infrastructure\CatalogServiceProvider;
 use Src\Currency\Infrastructure\CurrencyServiceProvider;
 use Src\Shared\Infrastructure\SharedServiceProvider;
 
@@ -12,4 +13,5 @@ return [
     SharedServiceProvider::class,
     AuthServiceProvider::class,
     CurrencyServiceProvider::class,
+    CatalogServiceProvider::class,
 ];

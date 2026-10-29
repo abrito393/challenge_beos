@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Src\Currency\Domain;
 
-use Src\Currency\Domain\ValueObjects\CurrencyId;
+use Src\Shared\Domain\ValueObjects\CurrencyId;
 
 interface CurrencyRepository
 {

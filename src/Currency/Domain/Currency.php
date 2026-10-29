@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Src\Currency\Domain;
 
 use Src\Currency\Domain\ValueObjects\CurrencyCode;
-use Src\Currency\Domain\ValueObjects\CurrencyId;
 use Src\Currency\Domain\ValueObjects\CurrencyName;
 use Src\Currency\Domain\ValueObjects\CurrencySymbol;
 use Src\Currency\Domain\ValueObjects\ExchangeRate;
+use Src\Shared\Domain\ValueObjects\CurrencyId;
 
 final readonly class Currency
 {
