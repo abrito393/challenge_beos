@@ -24,7 +24,7 @@ Las reglas que gobiernan todas las fases están en [`constitution.md`](./constit
 | ID | Feature | Spec | Plan | Tasks | Estado |
 |---|---|---|---|---|---|
 | 000 | [Foundation](./000-foundation/) — scaffolding, Docker, calidad, CI | ✅ | ✅ | ✅ | In Progress |
-| 001 | [Currencies](./001-currencies/) — divisas y conversión | ✅ | ⏳ | ⏳ | Approved |
+| 001 | [Currencies](./001-currencies/) — divisas y conversión | ✅ | ✅ | ✅ | Done |
 | 002 | [Products CRUD](./002-products-crud/) | ✅ | ⏳ | ⏳ | Approved |
 | 003 | [Product prices](./003-product-prices/) — precios por divisa | ✅ | ⏳ | ⏳ | Approved |
 | 004 | [Auth & Security](./004-auth-security/) — Sanctum, abilities, hardening | ✅ | ✅ | ✅ | Done |

@@ -21,7 +21,7 @@ Usaremos la opción 4:
 - Montos `DECIMAL(15,2)`, tasas `DECIMAL(18,8)`.
 - Cast Eloquent `decimal:2` / `decimal:8`, que devuelve string y nunca float.
 - Toda aritmética pasa por `BigDecimal` con escala intermedia alta, y se redondea `RoundingMode::HALF_UP` a 2 decimales **sólo al final**.
-- En el dominio, los montos son el Value Object `Src\Shared\Domain\Money` y las tasas `Src\Currency\Domain\ExchangeRate`, que encapsulan `BigDecimal` (ADR-0009).
+- En el dominio, los montos son el Value Object `Src\Shared\Domain\ValueObjects\Amount` y las tasas `Src\Currency\Domain\ValueObjects\ExchangeRate`, que encapsulan `BigDecimal` (ADR-0009).
 - JSON: los montos se serializan como string (`"19.99"`) y se documenta así en OpenAPI.
 - Validación de entrada: `numeric`, `min:0`, `decimal:0,2`.
 

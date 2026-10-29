@@ -1,6 +1,6 @@
 # 001 — Currencies
 
-- **Estado:** Approved
+- **Estado:** Done
 - **Autor:** Aquiles Brito
 - **Fecha:** 2026-10-29
 - **ADRs relacionados:** [0003 Precisión monetaria](../../docs/adr/0003-money-precision.md), [0004 Semántica de tasas de cambio](../../docs/adr/0004-exchange-rate-semantics.md)
