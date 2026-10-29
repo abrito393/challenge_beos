@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "f7e6388a-d4e4-5f7e-ae46-bb40c3a65d1b",
     "name": "Products API",
-    "description": "Colección ejecutable de la Products API. Corre las carpetas en orden: cada request guarda lo que necesita el siguiente (token, ids). Los tests de cada request verifican status, Problem Details y reglas de negocio.\n\nLevanta el stack con `make setup` y ejecuta: `npx newman run docs/api/postman_collection.json`.",
+    "description": "Colección ejecutable de la Products API.\n\n**Uso manual:** ejecuta primero `1. Auth → Login (admin)` (guarda el token). Las variables ya apuntan a los datos demo (`productId` = 1, Laptop Pro 14; `usdId`/`eurId`/`mxnId` = 1/2/3), así que cualquier request funciona en cualquier orden.\n\n**Uso completo:** *Run collection* ejecuta las carpetas en orden; cada request guarda lo que necesita el siguiente (crea su propio producto y al final lo elimina y revoca el token). Desde terminal: `make e2e`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -30,19 +30,19 @@
     },
     {
       "key": "usdId",
-      "value": ""
+      "value": "1"
     },
     {
       "key": "eurId",
-      "value": ""
+      "value": "2"
     },
     {
       "key": "mxnId",
-      "value": ""
+      "value": "3"
     },
     {
       "key": "productId",
-      "value": ""
+      "value": "1"
     }
   ],
   "item": [
